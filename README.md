@@ -37,16 +37,13 @@ O **yzy CRM** é um sistema de gestão de relacionamento com clientes (CRM) mini
 ## Screenshots
 
 ### Dashboard - Projetos
-![Dashboard Projetos](https://via.placeholder.com/800x400?text=Dashboard+Projetos)
+![Dashboard Projetos](./fotos/dashboard.png)
 
 ### Lista de Reuniões
-![Reuniões](https://via.placeholder.com/800x400?text=Lista+de+Reuniões)
-
-### Detalhes do Projeto
-![Detalhes Projeto](https://via.placeholder.com/800x400?text=Detalhes+do+Projeto)
+![Reuniões](./fotos/lista%20de%20reuinioes.png)
 
 ### Modal de Perfil
-![Perfil](https://via.placeholder.com/800x400?text=Perfil+Personalizado)
+![Perfil](./fotos/modal%20de%20perfil.png)
 
 ---
 
