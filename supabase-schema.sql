@@ -140,3 +140,29 @@ DROP POLICY IF EXISTS notes_select_policy ON notes;
 DROP POLICY IF EXISTS notes_insert_policy ON notes;
 DROP POLICY IF EXISTS notes_update_policy ON notes;
 DROP POLICY IF EXISTS notes_delete_policy ON notes;
+
+-- ═══════════ STORAGE BUCKET & POLICIES (upload de imagens) ═══════════
+-- 1. Cria o bucket (ignora se ja existe)
+INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+VALUES ('project-images', 'project-images', true, false, 5242880, ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'])
+ON CONFLICT (id) DO UPDATE SET public = true, file_size_limit = 5242880, allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
+
+-- 2. Policies do storage (anon pode ler, inserir e deletar)
+DROP POLICY IF EXISTS "Allow public select project-images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public insert project-images" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public delete project-images" ON storage.objects;
+
+CREATE POLICY "Allow public select project-images"
+ON storage.objects FOR SELECT
+TO anon, authenticated
+USING (bucket_id = 'project-images');
+
+CREATE POLICY "Allow public insert project-images"
+ON storage.objects FOR INSERT
+TO anon, authenticated
+WITH CHECK (bucket_id = 'project-images');
+
+CREATE POLICY "Allow public delete project-images"
+ON storage.objects FOR DELETE
+TO anon, authenticated
+USING (bucket_id = 'project-images');
