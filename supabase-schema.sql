@@ -113,6 +113,16 @@ BEGIN
   END IF;
 END $$;
 
+-- ───── PROJECT IMAGES ─────
+CREATE TABLE IF NOT EXISTS project_images (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_project_images_project ON project_images(project_id);
+
 -- ═══════════ Drop old RLS policies (schema antigo) ═══════════
 DROP POLICY IF EXISTS folders_select_policy ON folders;
 DROP POLICY IF EXISTS folders_insert_policy ON folders;

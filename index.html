@@ -652,6 +652,7 @@ let projects = [];
 let folders = [];
 let meetings = [];
 let notes = [];
+let images = [];
 
 // ═══════════ INIT ═══════════
 async function init(){
@@ -668,7 +669,7 @@ async function init(){
 
 async function loadAll(){
   try {
-    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadProfile()]);
+    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadImages()]);
     results.forEach((r, i) => { if(r.status === 'rejected') console.error('Load error:', i, r.reason); });
   } catch(e){ console.error('loadAll error:', e); }
   renderAll();
@@ -702,6 +703,13 @@ async function loadNotes(){
     const { data, error } = await supabase.from('notes').select('*').order('created_at', { ascending: true });
     if(!error && data) notes = data;
   } catch(e){ console.error('loadNotes:', e); }
+}
+
+async function loadImages(){
+  try {
+    const { data, error } = await supabase.from('project_images').select('*').order('created_at', { ascending: true });
+    if(!error && data) images = data;
+  } catch(e){ console.error('loadImages:', e); }
 }
 
 function updateCounts(){
@@ -937,6 +945,7 @@ function renderProjects(overrideData){
     return `
       <div class="card-shell reveal" style="transition-delay:${i * 40}ms" onclick="openDetailModal('${p.id}')">
         <div class="card-core project-card">
+          ${p.image_url ? `<div style="margin:-24px -24px 14px -24px;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;border-bottom:1px solid var(--border);height:140px;"><img src="${esc(p.image_url)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ''}
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;">
             <div class="project-title">${esc(p.title)}</div>
             <div class="priority-dot ${p.priority || 'medium'}" title="Prioridade: ${p.priority || 'média'}"></div>
@@ -1045,6 +1054,7 @@ function openDetailModal(projectId){
   const folder = folders.find(f => f.id === p.folder_id);
   const relatedMeetings = meetings.filter(m => m.project_id === p.id);
   const projectNotes = notes.filter(n => n.project_id === p.id);
+  const projectImages = images.filter(img => img.project_id === p.id);
 
   let notesHTML = '';
   if(projectNotes.length > 0){
@@ -1083,6 +1093,25 @@ function openDetailModal(projectId){
       ${p.due_date ? `<div>Prazo: ${formatDate(p.due_date)}</div>` : ''}
       ${p.url ? `<div><a href="${esc(p.url)}" target="_blank" style="color:var(--accent);text-decoration:none;">${esc(p.url)}</a></div>` : ''}
     </div>
+    ${projectImages.length > 0 ? `
+      <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Galeria (${projectImages.length})</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;">
+          ${projectImages.map(img => `
+            <div style="position:relative;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border);aspect-ratio:1;">
+              <img src="${esc(img.url)}" style="width:100%;height:100%;object-fit:cover;cursor:pointer;" onclick="window.open('${esc(img.url)}','_blank')">
+              <button class="btn btn-xs btn-danger" onclick="deleteImage('${img.id}', '${p.id}')" style="position:absolute;top:4px;right:4px;opacity:0;transition:opacity 0.2s;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">&#10005;</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    ` : ''}
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Adicionar Imagem</label>
+      <input type="file" id="imageUpload" accept="image/*" style="display:none;" onchange="uploadImage('${p.id}', this)">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('imageUpload').click()">Selecionar Arquivo</button>
+      <span id="uploadStatus" style="font-size:12px;color:var(--text-muted);margin-left:8px;"></span>
+    </div>
     ${relatedMeetings.length > 0 ? `
       <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
         <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Reuniões Relacionadas</label>
@@ -1097,9 +1126,9 @@ function openDetailModal(projectId){
     ${notesHTML}
     <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
       <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Adicionar Nota</label>
-      <div style="display:flex;gap:8px;">
-        <input type="text" id="newNoteInput" placeholder="Escreva uma nota..." style="flex:1;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveNote('${p.id}')}">
-        <button class="btn btn-primary btn-xs" onclick="saveNote('${p.id}')">Salvar</button>
+      <div style="display:flex;gap:8px;align-items:flex-start;">
+        <textarea id="newNoteInput" placeholder="Escreva uma nota..." rows="3" style="flex:1;" onkeydown="if(event.key==='Enter' && !event.shiftKey){event.preventDefault();saveNote('${p.id}')}"></textarea>
+        <button class="btn btn-primary btn-xs" onclick="saveNote('${p.id}')" style="margin-top:4px;">Salvar</button>
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:20px;">
@@ -1168,6 +1197,57 @@ async function deleteNote(noteId){
   const note = notes.find(n => n.id === noteId);
   if(note) openDetailModal(note.project_id);
   toast('Nota excluída', 'success');
+}
+
+async function uploadImage(projectId, input){
+  const file = input.files[0];
+  if(!file) return;
+  if(!file.type.startsWith('image/')){ toast('Selecione uma imagem', 'error'); return; }
+  if(file.size > 5 * 1024 * 1024){ toast('Imagem muito grande (máx 5MB)', 'error'); return; }
+
+  const statusEl = document.getElementById('uploadStatus');
+  if(statusEl) statusEl.textContent = 'Enviando...';
+
+  try {
+    const filePath = `${projectId}/${Date.now()}_${file.name}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage.from('project-images').upload(filePath, file, { upsert: false });
+    if(uploadError){ throw uploadError; }
+
+    const { data: urlData } = supabase.storage.from('project-images').getPublicUrl(filePath);
+    const publicUrl = urlData.publicUrl;
+
+    const { error: dbError } = await supabase.from('project_images').insert({ project_id: projectId, url: publicUrl });
+    if(dbError){ throw dbError; }
+
+    if(statusEl) statusEl.textContent = '';
+    input.value = '';
+    toast('Imagem enviada', 'success');
+    await loadImages();
+    openDetailModal(projectId);
+  } catch(e){
+    console.error('uploadImage:', e);
+    if(statusEl) statusEl.textContent = '';
+    toast('Erro: ' + (e.message || 'falha no upload'), 'error');
+  }
+}
+
+async function deleteImage(imageId, projectId){
+  if(!confirm('Excluir esta imagem?')) return;
+  try {
+    const img = images.find(i => i.id === imageId);
+    if(img){
+      const path = img.url.split('/project-images/')[1];
+      if(path) await supabase.storage.from('project-images').remove([path]);
+    }
+    const { error } = await supabase.from('project_images').delete().eq('id', imageId);
+    if(error) throw error;
+    await loadImages();
+    openDetailModal(projectId);
+    toast('Imagem excluída', 'success');
+  } catch(e){
+    console.error('deleteImage:', e);
+    toast('Erro: ' + (e.message || 'falha ao excluir'), 'error');
+  }
 }
 
 // ═══════════ MODAL CONTROLS ═══════════
