@@ -669,7 +669,7 @@ async function init(){
 
 async function loadAll(){
   try {
-    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadImages()]);
+    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadProfile(), loadImages()]);
     results.forEach((r, i) => { if(r.status === 'rejected') console.error('Load error:', i, r.reason); });
   } catch(e){ console.error('loadAll error:', e); }
   renderAll();
