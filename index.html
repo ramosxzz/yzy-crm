@@ -340,19 +340,6 @@ input[type="date"],input[type="time"]{font-size:15px}
 .color-preset:hover{transform:scale(1.15);border-color:var(--text)}
 .color-preset.active{border-color:var(--text);transform:scale(1.15)}
 
-.profile-avatar-placeholder{background:var(--profile-accent,var(--accent))!important}
-.profile-avatar-large-placeholder{background:var(--profile-accent,var(--accent))!important}
-.btn-primary{background:var(--profile-accent,var(--accent))!important}
-.btn-primary:hover{background:var(--profile-accent-hover,var(--accent-hover))!important}
-.nav-pill.active{color:var(--profile-accent,var(--accent))!important}
-.filter-chip.active{background:var(--profile-accent,var(--accent))!important;border-color:var(--profile-accent,var(--accent))!important}
-.search-wrap input:focus{border-color:var(--profile-accent,var(--accent))!important;box-shadow:0 0 0 3px var(--profile-accent-dim,var(--accent-dim))!important}
-input:focus,select:focus,textarea:focus{border-color:var(--profile-accent,var(--accent))!important;box-shadow:0 0 0 3px var(--profile-accent-dim,var(--accent-dim))!important}
-.meeting-date-box.today{color:var(--profile-accent,var(--accent))!important;background:var(--profile-accent-dim,var(--accent-dim))!important}
-.mobile-nav-item.active{color:var(--profile-accent,var(--accent))!important}
-.stat-accent .stat-value{color:var(--profile-accent,var(--accent))!important}
-.toast.success{background:var(--profile-accent,var(--accent))!important}
-
 /* ═══════════ RESPONSIVE ADJUSTMENTS ═══════════ */
 @media(max-width:768px){
   .modal{max-width:100%;margin:0 8px;padding:24px;border-radius:12px}
@@ -767,16 +754,13 @@ function renderProfileAvatar(){
 
 function applyProfileTheme(color){
   if(!color) return;
-  document.documentElement.style.setProperty('--profile-accent', color);
-  // calcular hover (escurecer 10%)
-  const r = Math.max(0, parseInt(color.slice(1,3), 16) - 25);
-  const g = Math.max(0, parseInt(color.slice(3,5), 16) - 25);
-  const b = Math.max(0, parseInt(color.slice(5,7), 16) - 25);
-  const hover = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
-  document.documentElement.style.setProperty('--profile-accent-hover', hover);
-  const r2 = parseInt(color.slice(1,3), 16), g2 = parseInt(color.slice(3,5), 16), b2 = parseInt(color.slice(5,7), 16);
-  document.documentElement.style.setProperty('--profile-accent-dim', `rgba(${r2},${g2},${b2},0.08)`);
-  document.documentElement.style.setProperty('--profile-accent-glow', `rgba(${r2},${g2},${b2},0.04)`);
+  // Aplicar cor do perfil em elementos específicos via inline style
+  document.querySelectorAll('.btn-primary').forEach(el => { el.style.background = color; el.style.borderColor = color; });
+  document.querySelectorAll('.profile-avatar-placeholder, .profile-avatar-large-placeholder').forEach(el => el.style.background = color);
+  document.querySelectorAll('.nav-pill.active').forEach(el => el.style.color = color);
+  document.querySelectorAll('.mobile-nav-item.active').forEach(el => el.style.color = color);
+  document.querySelectorAll('.stat-accent .stat-value').forEach(el => el.style.color = color);
+  document.querySelectorAll('.filter-chip.active').forEach(el => { el.style.background = color; el.style.borderColor = color; });
 }
 
 function openProfileModal(){
@@ -840,6 +824,8 @@ function renderAll(){
   updateNavActive();
   if(currentView === 'meetings'){ renderMeetings(); }
   else { renderProjects(); }
+  // reaplicar cor do perfil após renderização
+  if(currentProfile?.accent_color) applyProfileTheme(currentProfile.accent_color);
 }
 
 function renderStats(){
@@ -898,8 +884,8 @@ function setView(view){
 }
 
 function updateNavActive(){
-  document.querySelectorAll('.nav-pill').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-pill').forEach(el => { el.classList.remove('active'); el.style.color = ''; });
+  document.querySelectorAll('.mobile-nav-item').forEach(el => { el.classList.remove('active'); el.style.color = ''; });
   // desktop nav
   const dv = document.querySelector(`.nav-pill[data-view="${currentView}"]`);
   if(dv && !companyFilter) dv.classList.add('active');
@@ -910,6 +896,8 @@ function updateNavActive(){
   // mobile nav
   const mv = document.querySelector(`.mobile-nav-item[data-view="${currentView}"]`);
   if(mv && !companyFilter) mv.classList.add('active');
+  // reaplicar cor do perfil nos itens ativos
+  if(currentProfile?.accent_color) applyProfileTheme(currentProfile.accent_color);
 }
 
 // ═══════════ RENDER PROJECTS ═══════════
