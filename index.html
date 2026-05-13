@@ -141,14 +141,14 @@ body{
 }
 
 /* ═══════════ STATS BENTO GRID ═══════════ */
-.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:40px}
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:40px}
 .stat-card{padding:20px 24px;cursor:pointer;transition:border-color 0.2s var(--ease-apple)}
 .stat-card:hover .card-core{background:var(--surface2)}
 .stat-value{font-family:var(--font-display);font-size:28px;font-weight:600;line-height:1;letter-spacing:0;color:var(--text)}
 .stat-label{font-size:12px;color:var(--text-muted);margin-top:6px;font-weight:500;text-transform:none;letter-spacing:0}
 .stat-accent .stat-value{color:var(--accent)}
-@media(max-width:900px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:500px){.stats-grid{grid-template-columns:repeat(2,1fr)}.stat-value{font-size:24px}}
+@media(max-width:1100px){.stats-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.stats-grid{grid-template-columns:repeat(2,1fr)}.stat-value{font-size:24px}}
 
 /* ═══════════ FILTER CHIPS ═══════════ */
 .filters-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
@@ -388,6 +388,7 @@ input[type="date"],input[type="time"]{font-size:15px}
     <button class="nav-pill" data-company="SOLAIRE" onclick="toggleCompanyFilter('SOLAIRE')">SOLAIRE</button>
     <button class="nav-pill" data-company="AVANTE" onclick="toggleCompanyFilter('AVANTE')">AVANTE</button>
     <button class="nav-pill" data-view="completed" onclick="setView('completed')">Finalizados</button>
+    <button class="nav-pill" data-view="archived" onclick="setView('archived')">Arquivados</button>
   </div>
 </nav>
 
@@ -407,7 +408,7 @@ input[type="date"],input[type="time"]{font-size:15px}
       <button class="btn btn-icon" id="viewModeBtn" onclick="toggleViewMode()" title="Modo visualização">&#9632;</button>
       <button class="btn btn-icon" id="compactBtn" onclick="toggleCompactMode()" title="Modo compacto" style="font-size:13px;">&#9776;</button>
       <button class="btn btn-secondary" onclick="openTagModal()" title="Gerenciar Tags" style="font-size:13px;">&#9830; Tags</button>
-      <button class="btn btn-secondary" onclick="openTemplateModal()" title="Templates" style="font-size:13px;">&#9776; Templates</button>
+      <button class="btn btn-secondary" id="templateBtn" onclick="openTemplateModal()" title="Templates" style="font-size:13px;display:none;">&#9776; Templates</button>
       <button class="btn btn-primary" onclick="openProjectModal()">+ Projeto</button>
       <button class="btn btn-secondary" onclick="openMeetingModal()">+ Reunião</button>
       <div id="profileAvatarHeader" onclick="openProfileModal()" title="Meu Perfil"></div>
@@ -445,6 +446,9 @@ input[type="date"],input[type="time"]{font-size:15px}
     </button>
     <button class="mobile-nav-item" data-view="completed" onclick="setView('completed')">
       <span class="mnav-icon">&#9745;</span> Finalizados
+    </button>
+    <button class="mobile-nav-item" data-view="archived" onclick="setView('archived')">
+      <span class="mnav-icon">&#128451;</span> Arquivados
     </button>
   </div>
 </nav>
@@ -773,6 +777,7 @@ let tasks = [];
 let tags = [];
 let projectTags = [];
 let templates = [];
+let templatesEnabled = false;
 let dueFilter = null;
 let viewMode = localStorage.getItem('yzy_viewMode') || 'grid';
 let compactMode = localStorage.getItem('yzy_compact') === 'true';
@@ -862,7 +867,13 @@ async function loadProjectTags(){
 async function loadTemplates(){
   try {
     const { data, error } = await supabase.from('project_templates').select('*').order('name');
-    if(!error && data) templates = data;
+    if(error){
+      templatesEnabled = false;
+      templates = [];
+      return;
+    }
+    templatesEnabled = true;
+    templates = data || [];
   } catch(e){ console.error('loadTemplates:', e); }
 }
 
@@ -1010,6 +1021,7 @@ async function saveProfile(e){
 
 // ═══════════ RENDER ALL ═══════════
 function renderAll(){
+  syncOptionalFeatureButtons();
   renderStats();
   renderFilters();
   updateNavActive();
@@ -1017,6 +1029,13 @@ function renderAll(){
   else { renderProjects(); }
   // reaplicar cor do perfil após renderização
   if(currentProfile?.accent_color) applyProfileTheme(currentProfile.accent_color);
+}
+
+function syncOptionalFeatureButtons(){
+  const templateBtn = document.getElementById('templateBtn');
+  if(templateBtn){
+    templateBtn.style.display = templatesEnabled ? '' : 'none';
+  }
 }
 
 function renderStats(){
@@ -1027,13 +1046,15 @@ function renderStats(){
   document.getElementById('statsRow').classList.remove('view-hidden');
   const total = projects.length;
   const inProgress = projects.filter(p => p.status === 'in_progress').length;
-  const completed = projects.filter(p => p.status === 'completed' || p.status === 'archived').length;
+  const completed = projects.filter(p => p.status === 'completed').length;
+  const archived = projects.filter(p => p.status === 'archived').length;
   const blocked = projects.filter(p => p.status === 'blocked').length;
   const overdue = projects.filter(p => getDueStatus(p.due_date, p.status) === 'overdue').length;
   document.getElementById('statsRow').innerHTML = `
     <div class="card-shell stat-accent" onclick="setView('all')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Projetos</div></div></div>
     <div class="card-shell" onclick="setView('in_progress')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${inProgress}</div><div class="stat-label">Em Andamento</div></div></div>
     <div class="card-shell" onclick="setView('completed')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${completed}</div><div class="stat-label">Finalizados</div></div></div>
+    <div class="card-shell" onclick="setView('archived')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${archived}</div><div class="stat-label">Arquivados</div></div></div>
     <div class="card-shell" onclick="setView('blocked')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${blocked}</div><div class="stat-label">Bloqueados</div></div></div>
     <div class="card-shell" onclick="setDueFilter('overdue')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value" style="color:var(--red)">${overdue}</div><div class="stat-label">Vencidos</div></div></div>
   `;
@@ -1091,7 +1112,11 @@ function setView(view){
   calendarMode = false;
   document.getElementById('meetingList').classList.add('view-hidden');
   document.getElementById('projectGrid').classList.remove('view-hidden');
-  document.getElementById('mainTitle').textContent = view === 'meetings' ? 'Reuniões' : view === 'completed' ? 'Finalizados' : 'Projetos';
+  document.getElementById('mainTitle').textContent =
+    view === 'meetings' ? 'Reuniões' :
+    view === 'completed' ? 'Finalizados' :
+    view === 'archived' ? 'Arquivados' :
+    'Projetos';
   updateNavActive();
   renderFilters();
   if(view === 'meetings'){ renderMeetings(); }
@@ -1121,7 +1146,9 @@ function renderProjects(overrideData){
   if(!overrideData){
     // Filter by view
     if(currentView === 'completed'){
-      filtered = filtered.filter(p => p.status === 'completed' || p.status === 'archived');
+      filtered = filtered.filter(p => p.status === 'completed');
+    } else if(currentView === 'archived'){
+      filtered = filtered.filter(p => p.status === 'archived');
     } else if(currentView === 'all'){
       filtered = filtered.filter(p => p.status !== 'completed' && p.status !== 'archived');
     } else if(currentView !== 'meetings'){
@@ -1454,9 +1481,9 @@ function openDetailModal(projectId){
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:20px;flex-wrap:wrap;">
-      ${templates.length > 0 ? `<select id="templateSelect" style="height:34px;font-size:13px;width:auto;"><option value="">Usar Template...</option>${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select><button class="btn btn-xs btn-secondary" onclick="applyTemplate('${p.id}')">Aplicar</button>` : ''}
+      ${templatesEnabled && templates.length > 0 ? `<select id="templateSelect" style="height:34px;font-size:13px;width:auto;"><option value="">Usar Template...</option>${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select><button class="btn btn-xs btn-secondary" onclick="applyTemplate('${p.id}')">Aplicar</button>` : ''}
       <button class="btn btn-ghost" onclick="changeStatus('${p.id}', '${p.status === 'completed' ? 'todo' : 'completed'}')">${p.status === 'completed' ? 'Desmarcar' : 'Concluir'}</button>
-      <button class="btn btn-ghost" onclick="archiveProject('${p.id}')">Arquivar</button>
+      <button class="btn btn-ghost" onclick="archiveProject('${p.id}', '${p.status}')">${p.status === 'archived' ? 'Desarquivar' : 'Arquivar'}</button>
       <button class="btn btn-secondary" onclick="closeModal('detailModal');openProjectModal('${p.id}')">Editar</button>
       <button class="btn btn-danger" onclick="deleteProject('${p.id}')">Excluir</button>
     </div>
@@ -1473,13 +1500,14 @@ async function changeStatus(projectId, newStatus){
   loadAll();
 }
 
-async function archiveProject(projectId){
-  const { error } = await supabase.from('projects').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', projectId);
+async function archiveProject(projectId, currentStatus){
+  const nextStatus = currentStatus === 'archived' ? 'todo' : 'archived';
+  const { error } = await supabase.from('projects').update({ status: nextStatus, updated_at: new Date().toISOString() }).eq('id', projectId);
   if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
   const idx = projects.findIndex(p => p.id === projectId);
-  if(idx >= 0) projects[idx].status = 'archived';
+  if(idx >= 0) projects[idx].status = nextStatus;
   closeModal('detailModal');
-  toast('Projeto arquivado', 'success');
+  toast(nextStatus === 'archived' ? 'Projeto arquivado' : 'Projeto desarquivado', 'success');
   loadAll();
 }
 
@@ -1600,6 +1628,10 @@ async function removeTagFromProject(ptId, projectId){
 
 // ═══════════ TEMPLATES ═══════════
 function openTemplateModal(){
+  if(!templatesEnabled){
+    toast('Templates não estão configurados neste projeto', 'error');
+    return;
+  }
   renderTemplateList();
   openModal('templateModal');
 }

@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS projects (
   folder_id UUID REFERENCES folders(id) ON DELETE SET NULL,
   title TEXT NOT NULL,
   description TEXT,
-  status TEXT DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'review', 'completed', 'blocked')),
+  status TEXT DEFAULT 'todo' CHECK (status IN ('todo', 'in_progress', 'review', 'completed', 'blocked', 'archived')),
   priority TEXT DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high', 'urgent')),
   company TEXT CHECK (company IN ('SOLAIRE', 'AVANTE', 'PESSOAL')),
   due_date DATE,
@@ -37,6 +37,25 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'projects' AND column_name = 'image_url') THEN
     ALTER TABLE projects ADD COLUMN image_url TEXT;
   END IF;
+END $$;
+
+-- Ensure archived status is supported on existing projects tables
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.table_constraints
+    WHERE table_name = 'projects'
+      AND constraint_name = 'projects_status_check'
+  ) THEN
+    ALTER TABLE projects DROP CONSTRAINT projects_status_check;
+  END IF;
+
+  ALTER TABLE projects
+    ADD CONSTRAINT projects_status_check
+    CHECK (status IN ('todo', 'in_progress', 'review', 'completed', 'blocked', 'archived'));
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
 END $$;
 
 -- ───── MEETINGS ─────
