@@ -131,16 +131,17 @@ body{
 .card-shell{
   background:var(--bg);border:1px solid var(--border);
   border-radius:var(--radius);overflow:hidden;
-  transition:border-color 0.2s var(--ease-apple);
+  transition:transform 0.15s var(--ease-apple),border-color 0.2s var(--ease-apple);
 }
 .card-shell:hover{border-color:var(--text-muted)}
+.card-shell:active{transform:scale(0.985)}
 .card-core{
   padding:24px;height:100%;
   transition:background 0.2s var(--ease-apple);
 }
 
 /* ═══════════ STATS BENTO GRID ═══════════ */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:40px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:40px}
 .stat-card{padding:20px 24px;cursor:pointer;transition:border-color 0.2s var(--ease-apple)}
 .stat-card:hover .card-core{background:var(--surface2)}
 .stat-value{font-family:var(--font-display);font-size:28px;font-weight:600;line-height:1;letter-spacing:0;color:var(--text)}
@@ -162,8 +163,16 @@ body{
 
 /* ═══════════ PROJECT GRID ═══════════ */
 .project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+.project-grid.list-view{display:flex;flex-direction:column;gap:1px}
+.list-view .card-shell{border-radius:0}
+.list-view .card-core{display:flex;align-items:center;gap:16px;padding:12px 16px}
+.list-view .project-title{margin-bottom:0}
+.list-view .project-desc{display:none}
+.list-view .project-footer{display:none}
+.list-view .project-meta{margin-bottom:0}
 @media(max-width:768px){.project-grid{grid-template-columns:1fr}}
-.project-card{cursor:pointer}
+.project-card{cursor:pointer;transition:transform 0.2s var(--ease-apple),border-color 0.2s}
+.project-card:hover{transform:translateY(-2px)}
 .project-card .card-core{padding:24px}
 .project-title{font-family:var(--font-display);font-size:17px;font-weight:600;color:var(--text);line-height:1.35;margin-bottom:4px}
 .project-desc{
@@ -196,6 +205,13 @@ body{
 .badge-solaire{background:rgba(255,159,10,0.10);color:#B87A00}
 .badge-avante{background:rgba(90,200,250,0.10);color:#0077AA}
 .badge-pessoal{background:rgba(142,142,147,0.10);color:#8E8E93}
+.badge-overdue{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,59,48,0.3)}
+.badge-soon{background:var(--yellow-dim);color:#B87A00;border:1px solid rgba(255,159,10,0.3)}
+.badge-archived{background:rgba(142,142,147,0.10);color:#8E8E93}
+
+/* ═══════════ STAR BUTTON ═══════════ */
+.star-btn{background:none;border:none;cursor:pointer;font-size:18px;color:var(--text-muted);transition:all 0.2s;padding:4px}
+.star-btn.active{color:#FFB800}
 
 /* ═══════════ MEETINGS LIST ═══════════ */
 .meeting-list{display:flex;flex-direction:column;gap:8px}
@@ -229,9 +245,9 @@ body{
   border-radius:16px;padding:32px;width:100%;max-width:540px;
   max-height:90dvh;overflow-y:auto;
   box-shadow:0 12px 32px rgba(0,0,0,0.16);
-  animation:modalIn 0.3s var(--ease-apple);
+  animation:modalIn 0.35s cubic-bezier(0.22,1,0.36,1);
 }
-@keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(0.98)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{opacity:0;transform:translateY(20px) scale(0.96)}to{opacity:1;transform:none}}
 .modal h2{font-family:var(--font-display);font-size:24px;font-weight:600;margin-bottom:24px;letter-spacing:0;line-height:1.2}
 .modal-close{
   width:28px;height:28px;border-radius:var(--radius-full);
@@ -340,6 +356,18 @@ input[type="date"],input[type="time"]{font-size:15px}
 .color-preset:hover{transform:scale(1.15);border-color:var(--text)}
 .color-preset.active{border-color:var(--text);transform:scale(1.15)}
 
+/* ═══════════ COMPACT MODE ═══════════ */
+.compact-mode .card-core{padding:14px 16px}
+.compact-mode .project-title{font-size:15px}
+.compact-mode .project-desc{-webkit-line-clamp:1}
+
+/* ═══════════ CALENDAR ═══════════ */
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calendar-day{min-height:80px;padding:6px;border:1px solid var(--border);border-radius:var(--radius-xs);font-size:12px}
+.calendar-day.today{border-color:var(--accent);background:var(--accent-dim)}
+.calendar-day-num{font-weight:600;margin-bottom:4px}
+.calendar-event{padding:2px 4px;border-radius:3px;font-size:10px;margin-bottom:2px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ═══════════ RESPONSIVE ADJUSTMENTS ═══════════ */
 @media(max-width:768px){
   .modal{max-width:100%;margin:0 8px;padding:24px;border-radius:12px}
@@ -359,6 +387,7 @@ input[type="date"],input[type="time"]{font-size:15px}
     <span class="nav-sep"></span>
     <button class="nav-pill" data-company="SOLAIRE" onclick="toggleCompanyFilter('SOLAIRE')">SOLAIRE</button>
     <button class="nav-pill" data-company="AVANTE" onclick="toggleCompanyFilter('AVANTE')">AVANTE</button>
+    <button class="nav-pill" data-view="archived" onclick="setView('archived')">Arquivados</button>
   </div>
 </nav>
 
@@ -375,6 +404,11 @@ input[type="date"],input[type="time"]{font-size:15px}
         <input type="text" id="searchInput" placeholder="Buscar..." oninput="onSearch(this.value)">
       </div>
       <button class="btn btn-icon" onclick="toggleTheme()" title="Alternar tema">&#9788;</button>
+      <button class="btn btn-icon" id="viewModeBtn" onclick="toggleViewMode()" title="Modo visualização">&#9632;</button>
+      <button class="btn btn-icon" id="compactBtn" onclick="toggleCompactMode()" title="Modo compacto" style="font-size:13px;">&#9776;</button>
+      <button class="btn btn-secondary" onclick="toggleReports()" title="Relatórios" style="font-size:13px;">&#9636; Relatórios</button>
+      <button class="btn btn-secondary" onclick="openTagModal()" title="Gerenciar Tags" style="font-size:13px;">&#9830; Tags</button>
+      <button class="btn btn-secondary" onclick="openTemplateModal()" title="Templates" style="font-size:13px;">&#9776; Templates</button>
       <button class="btn btn-primary" onclick="openProjectModal()">+ Projeto</button>
       <button class="btn btn-secondary" onclick="openMeetingModal()">+ Reunião</button>
       <div id="profileAvatarHeader" onclick="openProfileModal()" title="Meu Perfil"></div>
@@ -410,6 +444,9 @@ input[type="date"],input[type="time"]{font-size:15px}
     <button class="mobile-nav-item" data-view="meetings" onclick="setView('meetings')">
       <span class="mnav-icon">&#9711;</span> Reuniões
     </button>
+    <button class="mobile-nav-item" data-view="archived" onclick="setView('archived')">
+      <span class="mnav-icon">&#9844;</span> Arquivados
+    </button>
   </div>
 </nav>
 
@@ -439,6 +476,7 @@ input[type="date"],input[type="time"]{font-size:15px}
             <option value="review">Em Revisão</option>
             <option value="completed">Finalizado</option>
             <option value="blocked">Bloqueado</option>
+            <option value="archived">Arquivado</option>
           </select>
         </div>
         <div class="form-group">
@@ -631,8 +669,112 @@ input[type="date"],input[type="time"]{font-size:15px}
   <div class="modal" id="detailContent"></div>
 </div>
 
+<!-- MODAL: Tags -->
+<div class="modal-overlay" id="tagModal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="margin:0;">Gerenciar Tags</h2>
+      <button class="modal-close" onclick="closeModal('tagModal')">&#10005;</button>
+    </div>
+    <form id="tagForm" onsubmit="saveTag(event)">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nome da Tag *</label>
+          <input type="text" id="tagName" required placeholder="Ex: Urgente">
+        </div>
+        <div class="form-group">
+          <label>Cor</label>
+          <input type="color" id="tagColor" value="#0071E3" style="height:44px;padding:4px;cursor:pointer;">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-bottom:20px;">Adicionar Tag</button>
+    </form>
+    <div id="tagList"></div>
+  </div>
+</div>
+
+<!-- MODAL: Templates -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h2 style="margin:0;">Templates de Projeto</h2>
+      <button class="modal-close" onclick="closeModal('templateModal')">&#10005;</button>
+    </div>
+    <form id="templateForm" onsubmit="saveTemplate(event)">
+      <div class="form-group">
+        <label>Nome do Template *</label>
+        <input type="text" id="templateName" required placeholder="Ex: Landing Page">
+      </div>
+      <div class="form-group">
+        <label>Descrição</label>
+        <textarea id="templateDesc" placeholder="Descrição do template..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status</label>
+          <select id="templateStatus">
+            <option value="todo">A Fazer</option>
+            <option value="in_progress">Em Andamento</option>
+            <option value="review">Em Revisão</option>
+            <option value="completed">Finalizado</option>
+            <option value="blocked">Bloqueado</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Prioridade</label>
+          <select id="templatePriority">
+            <option value="low">Baixa</option>
+            <option value="medium" selected>Média</option>
+            <option value="high">Alta</option>
+            <option value="urgent">Urgente</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Empresa</label>
+        <select id="templateCompany">
+          <option value="SOLAIRE">SOLAIRE</option>
+          <option value="AVANTE">AVANTE</option>
+          <option value="PESSOAL">PESSOAL</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Subtarefas (uma por linha)</label>
+        <textarea id="templateTasks" placeholder="Tarefa 1&#10;Tarefa 2&#10;Tarefa 3" rows="4"></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-bottom:20px;">Salvar Template</button>
+    </form>
+    <div id="templateList"></div>
+  </div>
+</div>
+
+<!-- REPORTS SECTION -->
+<div id="reportsSection" class="view-hidden" style="margin-bottom:40px;">
+  <div class="section-header" style="margin-bottom:16px;">
+    <h2>Relatórios</h2>
+    <button class="btn btn-ghost btn-sm" onclick="toggleReports()">Fechar</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
+    <div class="card-shell"><div class="card-core" style="padding:20px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Projetos por Empresa</h3>
+      <canvas id="chartCompany" height="200"></canvas>
+    </div></div>
+    <div class="card-shell"><div class="card-core" style="padding:20px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Projetos por Status</h3>
+      <canvas id="chartStatus" height="200"></canvas>
+    </div></div>
+    <div class="card-shell"><div class="card-core" style="padding:20px;">
+      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Reuniões por Mês</h3>
+      <canvas id="chartMeetings" height="200"></canvas>
+    </div></div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<!-- CHART.JS CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -653,6 +795,19 @@ let folders = [];
 let meetings = [];
 let notes = [];
 let images = [];
+let tasks = [];
+let tags = [];
+let projectTags = [];
+let templates = [];
+let dueFilter = null;
+let viewMode = localStorage.getItem('yzy_viewMode') || 'grid';
+let compactMode = localStorage.getItem('yzy_compact') === 'true';
+let calendarMode = false;
+let calendarMonth = new Date().getMonth();
+let calendarYear = new Date().getFullYear();
+let chartCompany = null;
+let chartStatus = null;
+let chartMeetings = null;
 
 // ═══════════ INIT ═══════════
 async function init(){
@@ -669,7 +824,7 @@ async function init(){
 
 async function loadAll(){
   try {
-    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadProfile(), loadImages()]);
+    const results = await Promise.allSettled([loadFolders(), loadProjects(), loadMeetings(), loadNotes(), loadProfile(), loadImages(), loadTasks(), loadTags(), loadProjectTags(), loadTemplates()]);
     results.forEach((r, i) => { if(r.status === 'rejected') console.error('Load error:', i, r.reason); });
   } catch(e){ console.error('loadAll error:', e); }
   renderAll();
@@ -712,7 +867,63 @@ async function loadImages(){
   } catch(e){ console.error('loadImages:', e); }
 }
 
+async function loadTasks(){
+  try {
+    const { data, error } = await supabase.from('project_tasks').select('*').order('sort_order');
+    if(!error && data) tasks = data;
+  } catch(e){ console.error('loadTasks:', e); }
+}
+
+async function loadTags(){
+  try {
+    const { data, error } = await supabase.from('tags').select('*').order('name');
+    if(!error && data) tags = data;
+  } catch(e){ console.error('loadTags:', e); }
+}
+
+async function loadProjectTags(){
+  try {
+    const { data, error } = await supabase.from('project_tags').select('*');
+    if(!error && data) projectTags = data;
+  } catch(e){ console.error('loadProjectTags:', e); }
+}
+
+async function loadTemplates(){
+  try {
+    const { data, error } = await supabase.from('project_templates').select('*').order('name');
+    if(!error && data) templates = data;
+  } catch(e){ console.error('loadTemplates:', e); }
+}
+
 function updateCounts(){
+}
+
+function getDueStatus(dueDate){
+  if(!dueDate) return 'ok';
+  const today = new Date().toISOString().split('T')[0];
+  if(dueDate < today) return 'overdue';
+  const due = new Date(dueDate);
+  const now = new Date(today);
+  const diff = Math.ceil((due - now) / (1000*60*60*24));
+  if(diff <= 3) return 'soon';
+  return 'ok';
+}
+
+function getProjectTaskProgress(projectId){
+  const projectTasks = tasks.filter(t => t.project_id === projectId);
+  if(projectTasks.length === 0) return null;
+  const done = projectTasks.filter(t => t.completed).length;
+  return { done, total: projectTasks.length };
+}
+
+function renderTagChips(projectId){
+  const pt = projectTags.filter(t => t.project_id === projectId);
+  if(pt.length === 0) return '';
+  return pt.map(t => {
+    const tag = tags.find(g => g.id === t.tag_id);
+    if(!tag) return '';
+    return `<span class="badge" style="background:${tag.color}20;color:${tag.color};border:1px solid ${tag.color}40">${esc(tag.name)}</span>`;
+  }).join('');
 }
 
 // ═══════════ PROFILE ═══════════
@@ -846,16 +1057,38 @@ function renderStats(){
   const inProgress = projects.filter(p => p.status === 'in_progress').length;
   const completed = projects.filter(p => p.status === 'completed').length;
   const blocked = projects.filter(p => p.status === 'blocked').length;
+  const overdue = projects.filter(p => getDueStatus(p.due_date) === 'overdue').length;
   document.getElementById('statsRow').innerHTML = `
     <div class="card-shell stat-accent" onclick="setView('all')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Projetos</div></div></div>
     <div class="card-shell" onclick="setView('in_progress')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${inProgress}</div><div class="stat-label">Em Andamento</div></div></div>
     <div class="card-shell" onclick="setView('completed')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${completed}</div><div class="stat-label">Finalizados</div></div></div>
     <div class="card-shell" onclick="setView('blocked')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${blocked}</div><div class="stat-label">Bloqueados</div></div></div>
+    <div class="card-shell" onclick="setDueFilter('overdue')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value" style="color:var(--red)">${overdue}</div><div class="stat-label">Vencidos</div></div></div>
   `;
 }
 
 function renderFilters(){
-  document.getElementById('filtersRow').classList.add('view-hidden');
+  if(currentView === 'meetings'){
+    document.getElementById('filtersRow').classList.add('view-hidden');
+    return;
+  }
+  document.getElementById('filtersRow').classList.remove('view-hidden');
+  let html = '';
+  html += `<button class="filter-chip${!dueFilter ? ' active' : ''}" onclick="setDueFilter(null)">Todos</button>`;
+  html += `<button class="filter-chip${dueFilter === 'overdue' ? ' active' : ''}" onclick="setDueFilter('overdue')">Vencidos</button>`;
+  html += `<button class="filter-chip${dueFilter === 'today' ? ' active' : ''}" onclick="setDueFilter('today')">Hoje</button>`;
+  html += `<button class="filter-chip${dueFilter === 'starred' ? ' active' : ''}" onclick="setDueFilter('starred')">Favoritos</button>`;
+  tags.forEach(t => {
+    const isActive = dueFilter === 'tag_' + t.id;
+    html += `<button class="filter-chip${isActive ? ' active' : ''}" onclick="setDueFilter('tag_${t.id}')" style="${isActive ? '' : 'border-color:' + t.color + '40;color:' + t.color}">${esc(t.name)}</button>`;
+  });
+  document.getElementById('filtersRow').innerHTML = html;
+}
+
+function setDueFilter(val){
+  dueFilter = val;
+  renderFilters();
+  renderProjects();
 }
 
 function filterByFolder(folderId){
@@ -882,9 +1115,11 @@ function onSearch(query){
 function setView(view){
   currentView = view;
   companyFilter = null;
+  dueFilter = null;
+  calendarMode = false;
   document.getElementById('meetingList').classList.add('view-hidden');
   document.getElementById('projectGrid').classList.remove('view-hidden');
-  document.getElementById('mainTitle').textContent = view === 'meetings' ? 'Reuniões' : 'Projetos';
+  document.getElementById('mainTitle').textContent = view === 'meetings' ? 'Reuniões' : view === 'archived' ? 'Arquivados' : 'Projetos';
   updateNavActive();
   renderFilters();
   if(view === 'meetings'){ renderMeetings(); }
@@ -912,7 +1147,13 @@ function updateNavActive(){
 function renderProjects(overrideData){
   let filtered = overrideData || [...projects];
   if(!overrideData){
-    if(currentView !== 'all'){
+    // Filter archived
+    if(currentView === 'archived'){
+      filtered = filtered.filter(p => p.status === 'archived');
+    } else {
+      filtered = filtered.filter(p => p.status !== 'archived');
+    }
+    if(currentView !== 'all' && currentView !== 'archived'){
       filtered = filtered.filter(p => p.status === currentView);
     }
     if(companyFilter){
@@ -924,36 +1165,76 @@ function renderProjects(overrideData){
         (p.description && p.description.toLowerCase().includes(searchQuery))
       );
     }
+    // Due filter
+    if(dueFilter === 'overdue'){
+      filtered = filtered.filter(p => getDueStatus(p.due_date) === 'overdue');
+    } else if(dueFilter === 'today'){
+      const today = new Date().toISOString().split('T')[0];
+      filtered = filtered.filter(p => p.due_date === today);
+    } else if(dueFilter === 'starred'){
+      filtered = filtered.filter(p => p.starred);
+    } else if(dueFilter && dueFilter.startsWith('tag_')){
+      const tagId = dueFilter.replace('tag_', '');
+      const pids = projectTags.filter(pt => pt.tag_id === tagId).map(pt => pt.project_id);
+      filtered = filtered.filter(p => pids.includes(p.id));
+    }
+    // Sort starred first
+    filtered.sort((a, b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
   }
   document.getElementById('meetingList').classList.add('view-hidden');
   document.getElementById('projectGrid').classList.remove('view-hidden');
   document.getElementById('emptyState').classList.add('view-hidden');
 
+  // Apply view mode class
+  const grid = document.getElementById('projectGrid');
+  grid.classList.toggle('list-view', viewMode === 'list');
+
   if(filtered.length === 0){
-    document.getElementById('projectGrid').innerHTML = '';
+    grid.innerHTML = '';
     document.getElementById('emptyState').classList.remove('view-hidden');
     return;
   }
 
-  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado' };
-  const statusBadges = { todo:'badge-todo', in_progress:'badge-progress', review:'badge-review', completed:'badge-done', blocked:'badge-blocked' };
+  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado', archived:'Arquivado' };
+  const statusBadges = { todo:'badge-todo', in_progress:'badge-progress', review:'badge-review', completed:'badge-done', blocked:'badge-blocked', archived:'badge-archived' };
   const companyBadges = { SOLAIRE:'badge-solaire', AVANTE:'badge-avante', PESSOAL:'badge-pessoal' };
 
-  document.getElementById('projectGrid').innerHTML = filtered.map((p, i) => {
+  grid.innerHTML = filtered.map((p, i) => {
     const folder = folders.find(f => f.id === p.folder_id);
     const folderPath = folder ? getFolderPath(folder) : '';
+    const dueStatus = getDueStatus(p.due_date);
+    const progress = getProjectTaskProgress(p.id);
+    const tagChips = renderTagChips(p.id);
+
+    // Image background mode
+    const hasBgImage = p.image_url && viewMode === 'grid';
+    const shellStyle = hasBgImage ? `background-image:url(${esc(p.image_url)});background-size:cover;background-position:center;position:relative;` : '';
+    const overlayStyle = hasBgImage ? 'position:relative;z-index:1;' : '';
+    const textWhite = hasBgImage ? 'color:#fff;' : '';
+    const overlayDiv = hasBgImage ? '<div style="position:absolute;inset:0;background:rgba(0,0,0,0.45);border-radius:inherit;z-index:0;"></div>' : '';
+
+    const imgSection = (p.image_url && !hasBgImage) ? `<div style="margin:-24px -24px 14px -24px;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;border-bottom:1px solid var(--border);height:140px;"><img src="${esc(p.image_url)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : '';
+
     return `
-      <div class="card-shell reveal" style="transition-delay:${i * 40}ms" onclick="openDetailModal('${p.id}')">
-        <div class="card-core project-card">
-          ${p.image_url ? `<div style="margin:-24px -24px 14px -24px;border-radius:var(--radius) var(--radius) 0 0;overflow:hidden;border-bottom:1px solid var(--border);height:140px;"><img src="${esc(p.image_url)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.parentElement.style.display='none'"></div>` : ''}
+      <div class="card-shell reveal" style="transition-delay:${i * 40}ms;${shellStyle}" onclick="openDetailModal('${p.id}')">
+        ${overlayDiv}
+        <div class="card-core project-card" style="${overlayStyle}">
+          ${!hasBgImage ? imgSection : ''}
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:2px;">
-            <div class="project-title">${esc(p.title)}</div>
+            <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+              <button class="star-btn${p.starred ? ' active' : ''}" onclick="event.stopPropagation();toggleStar('${p.id}')" title="Favorito">${p.starred ? '★' : '☆'}</button>
+              <div class="project-title" style="${textWhite}">${esc(p.title)}</div>
+            </div>
             <div class="priority-dot ${p.priority || 'medium'}" title="Prioridade: ${p.priority || 'média'}"></div>
           </div>
-          ${p.description ? `<div class="project-desc">${esc(p.description)}</div>` : ''}
+          ${p.description ? `<div class="project-desc" style="${hasBgImage ? 'color:rgba(255,255,255,0.85);' : ''}">${esc(p.description)}</div>` : ''}
           <div class="project-meta">
             <span class="badge ${statusBadges[p.status] || 'badge-todo'}">${statusLabels[p.status] || p.status}</span>
             ${p.company ? `<span class="badge ${companyBadges[p.company] || ''}">${esc(p.company)}</span>` : ''}
+            ${dueStatus === 'overdue' ? '<span class="badge badge-overdue">Vencido</span>' : ''}
+            ${dueStatus === 'soon' ? '<span class="badge badge-soon">Prazo próximo</span>' : ''}
+            ${progress ? `<span class="badge" style="background:var(--green-dim);color:#248A3D">✓ ${progress.done}/${progress.total}</span>` : ''}
+            ${tagChips}
           </div>
           <div class="project-footer">
             <div class="project-folder">${folderPath ? `<span>⊡</span> ${esc(folderPath)}` : ''}</div>
@@ -979,6 +1260,18 @@ function renderMeetings(){
   document.getElementById('projectGrid').classList.add('view-hidden');
   document.getElementById('meetingList').classList.remove('view-hidden');
   document.getElementById('emptyState').classList.add('view-hidden');
+
+  // Calendar mode toggle
+  let toggleHTML = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <div></div>
+    <button class="btn btn-ghost btn-sm" onclick="calendarMode=!calendarMode;renderMeetings()">${calendarMode ? 'Lista' : 'Calendário'}</button>
+  </div>`;
+
+  if(calendarMode){
+    document.getElementById('meetingList').innerHTML = toggleHTML + '<div id="calendarContainer"></div>';
+    renderCalendar();
+    return;
+  }
 
   let relevant = [...meetings];
   if(searchQuery){
@@ -1049,12 +1342,68 @@ function openDetailModal(projectId){
   const p = projects.find(x => x.id === projectId);
   if(!p) return;
 
-  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado' };
-  const statusBadges = { todo:'badge-todo', in_progress:'badge-progress', review:'badge-review', completed:'badge-done', blocked:'badge-blocked' };
+  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado', archived:'Arquivado' };
+  const statusBadges = { todo:'badge-todo', in_progress:'badge-progress', review:'badge-review', completed:'badge-done', blocked:'badge-blocked', archived:'badge-archived' };
   const folder = folders.find(f => f.id === p.folder_id);
   const relatedMeetings = meetings.filter(m => m.project_id === p.id);
   const projectNotes = notes.filter(n => n.project_id === p.id);
   const projectImages = images.filter(img => img.project_id === p.id);
+
+  // Checklist
+  const projectTasks = tasks.filter(t => t.project_id === projectId);
+  const doneTasks = projectTasks.filter(t => t.completed).length;
+  const totalTasks = projectTasks.length;
+  const percent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+  let checklistHTML = `
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Checklist</label>
+      ${totalTasks > 0 ? `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div style="flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden">
+            <div style="height:100%;background:var(--green);width:${percent}%;transition:width 0.3s"></div>
+          </div>
+          <span style="font-size:12px;color:var(--text-muted);">${doneTasks}/${totalTasks} concluído</span>
+        </div>
+      ` : ''}
+      ${projectTasks.map(t => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);">
+          <input type="checkbox" ${t.completed ? 'checked' : ''} onchange="toggleTask('${t.id}', this.checked, '${projectId}')" style="cursor:pointer;width:16px;height:16px;accent-color:var(--accent);">
+          <span style="flex:1;font-size:14px;${t.completed ? 'text-decoration:line-through;opacity:0.5;' : ''}">${esc(t.title)}</span>
+          <button class="btn btn-xs btn-danger" onclick="deleteTask('${t.id}', '${projectId}')" style="padding:0 6px;height:20px;font-size:11px;">✕</button>
+        </div>
+      `).join('')}
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <input type="text" id="newTaskInput" placeholder="Nova subtarefa..." style="flex:1;height:34px;font-size:13px;" onkeydown="if(event.key==='Enter'){event.preventDefault();saveTask('${projectId}')}">
+        <button class="btn btn-xs btn-primary" onclick="saveTask('${projectId}')">+</button>
+      </div>
+    </div>
+  `;
+
+  // Tags
+  const pTags = projectTags.filter(pt => pt.project_id === projectId);
+  const availableTags = tags.filter(t => !pTags.find(pt => pt.tag_id === t.id));
+
+  let tagsHTML = `
+    <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
+      <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Tags</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        ${pTags.map(pt => {
+          const tag = tags.find(t => t.id === pt.tag_id);
+          if(!tag) return '';
+          return `<span class="badge" style="background:${tag.color}20;color:${tag.color};border:1px solid ${tag.color}40;cursor:pointer;" onclick="removeTagFromProject('${pt.id}','${projectId}')">${esc(tag.name)} ✕</span>`;
+        }).join('')}
+        ${pTags.length === 0 ? '<span style="font-size:13px;color:var(--text-muted);">Nenhuma tag</span>' : ''}
+      </div>
+      ${availableTags.length > 0 ? `
+        <select id="addTagSelect" style="height:34px;font-size:13px;width:auto;display:inline-block;">
+          <option value="">Adicionar tag...</option>
+          ${availableTags.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
+        </select>
+        <button class="btn btn-xs btn-secondary" onclick="addTagToProject('${projectId}')">Adicionar</button>
+      ` : ''}
+    </div>
+  `;
 
   let notesHTML = '';
   if(projectNotes.length > 0){
@@ -1123,6 +1472,8 @@ function openDetailModal(projectId){
         `).join('')}
       </div>
     ` : ''}
+    ${checklistHTML}
+    ${tagsHTML}
     ${notesHTML}
     <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:20px;">
       <label style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:10px;display:block;">Adicionar Nota</label>
@@ -1131,8 +1482,10 @@ function openDetailModal(projectId){
         <button class="btn btn-primary btn-xs" onclick="saveNote('${p.id}')" style="margin-top:4px;">Salvar</button>
       </div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:20px;">
+    <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:20px;flex-wrap:wrap;">
+      ${templates.length > 0 ? `<select id="templateSelect" style="height:34px;font-size:13px;width:auto;"><option value="">Usar Template...</option>${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select><button class="btn btn-xs btn-secondary" onclick="applyTemplate('${p.id}')">Aplicar</button>` : ''}
       <button class="btn btn-ghost" onclick="changeStatus('${p.id}', '${p.status === 'completed' ? 'todo' : 'completed'}')">${p.status === 'completed' ? 'Desmarcar' : 'Concluir'}</button>
+      <button class="btn btn-ghost" onclick="archiveProject('${p.id}')">Arquivar</button>
       <button class="btn btn-secondary" onclick="closeModal('detailModal');openProjectModal('${p.id}')">Editar</button>
       <button class="btn btn-danger" onclick="deleteProject('${p.id}')">Excluir</button>
     </div>
@@ -1147,6 +1500,307 @@ async function changeStatus(projectId, newStatus){
   if(idx >= 0) projects[idx].status = newStatus;
   closeModal('detailModal');
   loadAll();
+}
+
+async function archiveProject(projectId){
+  const { error } = await supabase.from('projects').update({ status: 'archived', updated_at: new Date().toISOString() }).eq('id', projectId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  const idx = projects.findIndex(p => p.id === projectId);
+  if(idx >= 0) projects[idx].status = 'archived';
+  closeModal('detailModal');
+  toast('Projeto arquivado', 'success');
+  loadAll();
+}
+
+async function toggleStar(projectId){
+  const p = projects.find(x => x.id === projectId);
+  if(!p) return;
+  const newVal = !p.starred;
+  const { error } = await supabase.from('projects').update({ starred: newVal }).eq('id', projectId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  p.starred = newVal;
+  renderProjects();
+}
+
+function toggleViewMode(){
+  viewMode = viewMode === 'grid' ? 'list' : 'grid';
+  localStorage.setItem('yzy_viewMode', viewMode);
+  renderProjects();
+}
+
+function toggleCompactMode(){
+  compactMode = !compactMode;
+  localStorage.setItem('yzy_compact', compactMode);
+  document.body.classList.toggle('compact-mode', compactMode);
+  renderProjects();
+}
+
+function toggleReports(){
+  const el = document.getElementById('reportsSection');
+  el.classList.toggle('view-hidden');
+  if(!el.classList.contains('view-hidden')) renderCharts();
+}
+
+// ═══════════ CHECKLIST / TASKS ═══════════
+async function saveTask(projectId){
+  const input = document.getElementById('newTaskInput');
+  if(!input) return;
+  const title = input.value.trim();
+  if(!title) return;
+  const maxOrder = tasks.filter(t => t.project_id === projectId).reduce((max, t) => Math.max(max, t.sort_order || 0), 0);
+  const { error } = await supabase.from('project_tasks').insert({ project_id: projectId, title, sort_order: maxOrder + 1 });
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  toast('Tarefa adicionada', 'success');
+  await loadTasks();
+  openDetailModal(projectId);
+}
+
+async function toggleTask(taskId, completed, projectId){
+  const { error } = await supabase.from('project_tasks').update({ completed }).eq('id', taskId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  const t = tasks.find(x => x.id === taskId);
+  if(t) t.completed = completed;
+  renderProjects();
+  openDetailModal(projectId);
+}
+
+async function deleteTask(taskId, projectId){
+  const { error } = await supabase.from('project_tasks').delete().eq('id', taskId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  tasks = tasks.filter(t => t.id !== taskId);
+  toast('Tarefa excluída', 'success');
+  openDetailModal(projectId);
+}
+
+// ═══════════ TAGS ═══════════
+function openTagModal(){
+  renderTagList();
+  openModal('tagModal');
+}
+
+function renderTagList(){
+  const el = document.getElementById('tagList');
+  if(!el) return;
+  if(tags.length === 0){ el.innerHTML = '<p style="font-size:14px;color:var(--text-muted);">Nenhuma tag criada.</p>'; return; }
+  el.innerHTML = tags.map(t => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="width:16px;height:16px;border-radius:50%;background:${t.color};flex-shrink:0;"></span>
+      <span style="flex:1;font-size:14px;">${esc(t.name)}</span>
+      <button class="btn btn-xs btn-danger" onclick="deleteTag('${t.id}')">Excluir</button>
+    </div>
+  `).join('');
+}
+
+async function saveTag(e){
+  e.preventDefault();
+  const name = document.getElementById('tagName').value.trim();
+  const color = document.getElementById('tagColor').value;
+  if(!name) return;
+  const { error } = await supabase.from('tags').insert({ name, color });
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  document.getElementById('tagName').value = '';
+  toast('Tag criada', 'success');
+  await loadTags();
+  renderTagList();
+  renderFilters();
+}
+
+async function deleteTag(tagId){
+  if(!confirm('Excluir esta tag?')) return;
+  const { error } = await supabase.from('tags').delete().eq('id', tagId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  tags = tags.filter(t => t.id !== tagId);
+  projectTags = projectTags.filter(pt => pt.tag_id !== tagId);
+  toast('Tag excluída', 'success');
+  renderTagList();
+  renderFilters();
+  renderProjects();
+}
+
+async function addTagToProject(projectId){
+  const sel = document.getElementById('addTagSelect');
+  if(!sel || !sel.value) return;
+  const { error } = await supabase.from('project_tags').insert({ project_id: projectId, tag_id: sel.value });
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  await loadProjectTags();
+  openDetailModal(projectId);
+}
+
+async function removeTagFromProject(ptId, projectId){
+  const { error } = await supabase.from('project_tags').delete().eq('id', ptId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  projectTags = projectTags.filter(pt => pt.id !== ptId);
+  openDetailModal(projectId);
+}
+
+// ═══════════ TEMPLATES ═══════════
+function openTemplateModal(){
+  renderTemplateList();
+  openModal('templateModal');
+}
+
+function renderTemplateList(){
+  const el = document.getElementById('templateList');
+  if(!el) return;
+  if(templates.length === 0){ el.innerHTML = '<p style="font-size:14px;color:var(--text-muted);">Nenhum template criado.</p>'; return; }
+  el.innerHTML = templates.map(t => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);">
+      <span style="flex:1;font-size:14px;font-weight:500;">${esc(t.name)}</span>
+      <button class="btn btn-xs btn-danger" onclick="deleteTemplate('${t.id}')">Excluir</button>
+    </div>
+  `).join('');
+}
+
+async function saveTemplate(e){
+  e.preventDefault();
+  const tasksText = document.getElementById('templateTasks').value.trim();
+  const tasksList = tasksText ? tasksText.split('\n').filter(l => l.trim()).map((title, i) => ({ title: title.trim(), sort_order: i + 1 })) : [];
+  const data = {
+    name: document.getElementById('templateName').value.trim(),
+    description: document.getElementById('templateDesc').value.trim() || null,
+    status: document.getElementById('templateStatus').value,
+    priority: document.getElementById('templatePriority').value,
+    company: document.getElementById('templateCompany').value,
+    tasks: tasksList
+  };
+  const { error } = await supabase.from('project_templates').insert(data);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  document.getElementById('templateForm').reset();
+  toast('Template criado', 'success');
+  await loadTemplates();
+  renderTemplateList();
+}
+
+async function deleteTemplate(templateId){
+  if(!confirm('Excluir este template?')) return;
+  const { error } = await supabase.from('project_templates').delete().eq('id', templateId);
+  if(error){ toast('Erro: ' + (error.message || error.details || 'desconhecido'), 'error'); console.error(error); return; }
+  templates = templates.filter(t => t.id !== templateId);
+  toast('Template excluído', 'success');
+  renderTemplateList();
+}
+
+function applyTemplate(projectId){
+  const sel = document.getElementById('templateSelect');
+  if(!sel || !sel.value) return;
+  const tmpl = templates.find(t => t.id === sel.value);
+  if(!tmpl) return;
+  // Create tasks from template
+  if(tmpl.tasks && Array.isArray(tmpl.tasks)){
+    tmpl.tasks.forEach(async (t, i) => {
+      await supabase.from('project_tasks').insert({ project_id: projectId, title: t.title, sort_order: t.sort_order || i + 1 });
+    });
+  }
+  toast('Template aplicado: ' + tmpl.name, 'success');
+  loadTasks().then(() => openDetailModal(projectId));
+}
+
+async function createFromTemplate(templateId){
+  const tmpl = templates.find(t => t.id === templateId);
+  if(!tmpl) return;
+  const { data: proj, error: projErr } = await supabase.from('projects').insert({
+    user_id: USER_ID, title: tmpl.name, description: tmpl.description,
+    status: tmpl.status || 'todo', priority: tmpl.priority || 'medium', company: tmpl.company || 'SOLAIRE'
+  }).select().single();
+  if(projErr){ toast('Erro: ' + (projErr.message || projErr.details || 'desconhecido'), 'error'); console.error(projErr); return; }
+  if(tmpl.tasks && Array.isArray(tmpl.tasks)){
+    for(const t of tmpl.tasks){
+      await supabase.from('project_tasks').insert({ project_id: proj.id, title: t.title, sort_order: t.sort_order || 1 });
+    }
+  }
+  toast('Projeto criado a partir do template', 'success');
+  await loadAll();
+}
+
+// ═══════════ CALENDAR ═══════════
+function renderCalendar(){
+  const today = new Date().toISOString().split('T')[0];
+  const firstDay = new Date(calendarYear, calendarMonth, 1);
+  const lastDay = new Date(calendarYear, calendarMonth + 1, 0);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+
+  const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <button class="btn btn-ghost btn-sm" onclick="calendarMonth--;if(calendarMonth<0){calendarMonth=11;calendarYear--}renderCalendar()">◀ Anterior</button>
+    <span style="font-size:16px;font-weight:600;">${monthNames[calendarMonth]} ${calendarYear}</span>
+    <button class="btn btn-ghost btn-sm" onclick="calendarMonth++;if(calendarMonth>11){calendarMonth=0;calendarYear++}renderCalendar()">Próximo ▶</button>
+  </div>`;
+
+  html += '<div class="calendar-grid">';
+  const dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  dayNames.forEach(d => { html += `<div style="text-align:center;font-size:11px;font-weight:600;color:var(--text-muted);padding:4px;">${d}</div>`; });
+
+  for(let i = 0; i < startWeekday; i++) html += '<div></div>';
+  for(let day = 1; day <= daysInMonth; day++){
+    const dateStr = `${calendarYear}-${String(calendarMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const isToday = dateStr === today;
+    const dayMeetings = meetings.filter(m => m.date === dateStr);
+    html += `<div class="calendar-day${isToday ? ' today' : ''}">
+      <div class="calendar-day-num">${day}</div>
+      ${dayMeetings.map(m => `<div class="calendar-event" style="background:var(--accent-dim);color:var(--accent);" onclick="openMeetingDetail('${m.id}')" title="${esc(m.title)}">${esc(m.title)}</div>`).join('')}
+    </div>`;
+  }
+  html += '</div>';
+
+  const container = document.getElementById('calendarContainer') || document.getElementById('meetingList');
+  container.innerHTML = html;
+}
+
+// ═══════════ CHARTS ═══════════
+function renderCharts(){
+  if(typeof Chart === 'undefined') return;
+
+  // Destroy old charts
+  if(chartCompany) { chartCompany.destroy(); chartCompany = null; }
+  if(chartStatus) { chartStatus.destroy(); chartStatus = null; }
+  if(chartMeetings) { chartMeetings.destroy(); chartMeetings = null; }
+
+  // Projects by company
+  const companies = ['SOLAIRE', 'AVANTE', 'PESSOAL'];
+  const companyCounts = companies.map(c => projects.filter(p => p.company === c).length);
+  const ctx1 = document.getElementById('chartCompany');
+  if(ctx1){
+    chartCompany = new Chart(ctx1.getContext('2d'), {
+      type: 'doughnut',
+      data: { labels: companies, datasets: [{ data: companyCounts, backgroundColor: ['#FF9F0A','#5AC8FA','#8E8E93'] }] },
+      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  // Projects by status
+  const statuses = ['todo','in_progress','review','completed','blocked','archived'];
+  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado', archived:'Arquivado' };
+  const statusCounts = statuses.map(s => projects.filter(p => p.status === s).length);
+  const ctx2 = document.getElementById('chartStatus');
+  if(ctx2){
+    chartStatus = new Chart(ctx2.getContext('2d'), {
+      type: 'bar',
+      data: { labels: statuses.map(s => statusLabels[s]), datasets: [{ label: 'Projetos', data: statusCounts, backgroundColor: ['#0A84FF','#FF9F0A','#AF52DE','#34C759','#FF3B30','#8E8E93'] }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
+
+  // Meetings by month (last 6 months)
+  const months = [];
+  const meetingCounts = [];
+  const now = new Date();
+  for(let i = 5; i >= 0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    months.push(monthNames[d.getMonth()] + ' ' + d.getFullYear());
+    meetingCounts.push(meetings.filter(m => m.date && m.date.startsWith(monthKey)).length);
+  }
+  const ctx3 = document.getElementById('chartMeetings');
+  if(ctx3){
+    chartMeetings = new Chart(ctx3.getContext('2d'), {
+      type: 'line',
+      data: { labels: months, datasets: [{ label: 'Reuniões', data: meetingCounts, borderColor: '#0A84FF', backgroundColor: 'rgba(10,132,255,0.1)', fill: true, tension: 0.3 }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+    });
+  }
 }
 
 function openMeetingDetail(meetingId){
@@ -1537,6 +2191,7 @@ document.addEventListener('keydown', function(e){
 (function(){
   const saved = localStorage.getItem('yzy_theme') || 'light';
   document.documentElement.setAttribute('data-theme', saved);
+  if(localStorage.getItem('yzy_compact') === 'true') document.body.classList.add('compact-mode');
 })();
 
 // ───── Init ─────
