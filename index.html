@@ -898,8 +898,9 @@ async function loadTemplates(){
 function updateCounts(){
 }
 
-function getDueStatus(dueDate){
+function getDueStatus(dueDate, status){
   if(!dueDate) return 'ok';
+  if(status === 'completed' || status === 'archived') return 'ok';
   const today = new Date().toISOString().split('T')[0];
   if(dueDate < today) return 'overdue';
   const due = new Date(dueDate);
@@ -1055,9 +1056,9 @@ function renderStats(){
   document.getElementById('statsRow').classList.remove('view-hidden');
   const total = projects.length;
   const inProgress = projects.filter(p => p.status === 'in_progress').length;
-  const completed = projects.filter(p => p.status === 'completed').length;
+  const completed = projects.filter(p => p.status === 'completed' || p.status === 'archived').length;
   const blocked = projects.filter(p => p.status === 'blocked').length;
-  const overdue = projects.filter(p => getDueStatus(p.due_date) === 'overdue').length;
+  const overdue = projects.filter(p => getDueStatus(p.due_date, p.status) === 'overdue').length;
   document.getElementById('statsRow').innerHTML = `
     <div class="card-shell stat-accent" onclick="setView('all')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${total}</div><div class="stat-label">Total Projetos</div></div></div>
     <div class="card-shell" onclick="setView('in_progress')" style="cursor:pointer"><div class="card-core stat-card"><div class="stat-value">${inProgress}</div><div class="stat-label">Em Andamento</div></div></div>
@@ -1167,7 +1168,7 @@ function renderProjects(overrideData){
     }
     // Due filter
     if(dueFilter === 'overdue'){
-      filtered = filtered.filter(p => getDueStatus(p.due_date) === 'overdue');
+      filtered = filtered.filter(p => getDueStatus(p.due_date, p.status) === 'overdue');
     } else if(dueFilter === 'today'){
       const today = new Date().toISOString().split('T')[0];
       filtered = filtered.filter(p => p.due_date === today);
@@ -1202,7 +1203,7 @@ function renderProjects(overrideData){
   grid.innerHTML = filtered.map((p, i) => {
     const folder = folders.find(f => f.id === p.folder_id);
     const folderPath = folder ? getFolderPath(folder) : '';
-    const dueStatus = getDueStatus(p.due_date);
+    const dueStatus = getDueStatus(p.due_date, p.status);
     const progress = getProjectTaskProgress(p.id);
     const tagChips = renderTagChips(p.id);
 
