@@ -387,7 +387,7 @@ input[type="date"],input[type="time"]{font-size:15px}
     <span class="nav-sep"></span>
     <button class="nav-pill" data-company="SOLAIRE" onclick="toggleCompanyFilter('SOLAIRE')">SOLAIRE</button>
     <button class="nav-pill" data-company="AVANTE" onclick="toggleCompanyFilter('AVANTE')">AVANTE</button>
-    <button class="nav-pill" data-view="archived" onclick="setView('archived')">Arquivados</button>
+    <button class="nav-pill" data-view="completed" onclick="setView('completed')">Finalizados</button>
   </div>
 </nav>
 
@@ -406,7 +406,6 @@ input[type="date"],input[type="time"]{font-size:15px}
       <button class="btn btn-icon" onclick="toggleTheme()" title="Alternar tema">&#9788;</button>
       <button class="btn btn-icon" id="viewModeBtn" onclick="toggleViewMode()" title="Modo visualização">&#9632;</button>
       <button class="btn btn-icon" id="compactBtn" onclick="toggleCompactMode()" title="Modo compacto" style="font-size:13px;">&#9776;</button>
-      <button class="btn btn-secondary" onclick="toggleReports()" title="Relatórios" style="font-size:13px;">&#9636; Relatórios</button>
       <button class="btn btn-secondary" onclick="openTagModal()" title="Gerenciar Tags" style="font-size:13px;">&#9830; Tags</button>
       <button class="btn btn-secondary" onclick="openTemplateModal()" title="Templates" style="font-size:13px;">&#9776; Templates</button>
       <button class="btn btn-primary" onclick="openProjectModal()">+ Projeto</button>
@@ -444,8 +443,8 @@ input[type="date"],input[type="time"]{font-size:15px}
     <button class="mobile-nav-item" data-view="meetings" onclick="setView('meetings')">
       <span class="mnav-icon">&#9711;</span> Reuniões
     </button>
-    <button class="mobile-nav-item" data-view="archived" onclick="setView('archived')">
-      <span class="mnav-icon">&#9844;</span> Arquivados
+    <button class="mobile-nav-item" data-view="completed" onclick="setView('completed')">
+      <span class="mnav-icon">&#9745;</span> Finalizados
     </button>
   </div>
 </nav>
@@ -748,33 +747,8 @@ input[type="date"],input[type="time"]{font-size:15px}
   </div>
 </div>
 
-<!-- REPORTS SECTION -->
-<div id="reportsSection" class="view-hidden" style="margin-bottom:40px;">
-  <div class="section-header" style="margin-bottom:16px;">
-    <h2>Relatórios</h2>
-    <button class="btn btn-ghost btn-sm" onclick="toggleReports()">Fechar</button>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;">
-    <div class="card-shell"><div class="card-core" style="padding:20px;">
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Projetos por Empresa</h3>
-      <canvas id="chartCompany" height="200"></canvas>
-    </div></div>
-    <div class="card-shell"><div class="card-core" style="padding:20px;">
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Projetos por Status</h3>
-      <canvas id="chartStatus" height="200"></canvas>
-    </div></div>
-    <div class="card-shell"><div class="card-core" style="padding:20px;">
-      <h3 style="font-size:14px;font-weight:600;margin-bottom:12px;">Reuniões por Mês</h3>
-      <canvas id="chartMeetings" height="200"></canvas>
-    </div></div>
-  </div>
-</div>
-
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-<!-- CHART.JS CDN -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 
 <!-- SUPABASE SDK -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -805,9 +779,6 @@ let compactMode = localStorage.getItem('yzy_compact') === 'true';
 let calendarMode = false;
 let calendarMonth = new Date().getMonth();
 let calendarYear = new Date().getFullYear();
-let chartCompany = null;
-let chartStatus = null;
-let chartMeetings = null;
 
 // ═══════════ INIT ═══════════
 async function init(){
@@ -1120,7 +1091,7 @@ function setView(view){
   calendarMode = false;
   document.getElementById('meetingList').classList.add('view-hidden');
   document.getElementById('projectGrid').classList.remove('view-hidden');
-  document.getElementById('mainTitle').textContent = view === 'meetings' ? 'Reuniões' : view === 'archived' ? 'Arquivados' : 'Projetos';
+  document.getElementById('mainTitle').textContent = view === 'meetings' ? 'Reuniões' : view === 'completed' ? 'Finalizados' : 'Projetos';
   updateNavActive();
   renderFilters();
   if(view === 'meetings'){ renderMeetings(); }
@@ -1148,13 +1119,12 @@ function updateNavActive(){
 function renderProjects(overrideData){
   let filtered = overrideData || [...projects];
   if(!overrideData){
-    // Filter archived
-    if(currentView === 'archived'){
-      filtered = filtered.filter(p => p.status === 'archived');
-    } else {
-      filtered = filtered.filter(p => p.status !== 'archived');
-    }
-    if(currentView !== 'all' && currentView !== 'archived'){
+    // Filter by view
+    if(currentView === 'completed'){
+      filtered = filtered.filter(p => p.status === 'completed' || p.status === 'archived');
+    } else if(currentView === 'all'){
+      filtered = filtered.filter(p => p.status !== 'completed' && p.status !== 'archived');
+    } else if(currentView !== 'meetings'){
       filtered = filtered.filter(p => p.status === currentView);
     }
     if(companyFilter){
@@ -1536,12 +1506,6 @@ function toggleCompactMode(){
   renderProjects();
 }
 
-function toggleReports(){
-  const el = document.getElementById('reportsSection');
-  el.classList.toggle('view-hidden');
-  if(!el.classList.contains('view-hidden')) renderCharts();
-}
-
 // ═══════════ CHECKLIST / TASKS ═══════════
 async function saveTask(projectId){
   const input = document.getElementById('newTaskInput');
@@ -1747,61 +1711,6 @@ function renderCalendar(){
 
   const container = document.getElementById('calendarContainer') || document.getElementById('meetingList');
   container.innerHTML = html;
-}
-
-// ═══════════ CHARTS ═══════════
-function renderCharts(){
-  if(typeof Chart === 'undefined') return;
-
-  // Destroy old charts
-  if(chartCompany) { chartCompany.destroy(); chartCompany = null; }
-  if(chartStatus) { chartStatus.destroy(); chartStatus = null; }
-  if(chartMeetings) { chartMeetings.destroy(); chartMeetings = null; }
-
-  // Projects by company
-  const companies = ['SOLAIRE', 'AVANTE', 'PESSOAL'];
-  const companyCounts = companies.map(c => projects.filter(p => p.company === c).length);
-  const ctx1 = document.getElementById('chartCompany');
-  if(ctx1){
-    chartCompany = new Chart(ctx1.getContext('2d'), {
-      type: 'doughnut',
-      data: { labels: companies, datasets: [{ data: companyCounts, backgroundColor: ['#FF9F0A','#5AC8FA','#8E8E93'] }] },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
-    });
-  }
-
-  // Projects by status
-  const statuses = ['todo','in_progress','review','completed','blocked','archived'];
-  const statusLabels = { todo:'A Fazer', in_progress:'Andamento', review:'Revisão', completed:'Finalizado', blocked:'Bloqueado', archived:'Arquivado' };
-  const statusCounts = statuses.map(s => projects.filter(p => p.status === s).length);
-  const ctx2 = document.getElementById('chartStatus');
-  if(ctx2){
-    chartStatus = new Chart(ctx2.getContext('2d'), {
-      type: 'bar',
-      data: { labels: statuses.map(s => statusLabels[s]), datasets: [{ label: 'Projetos', data: statusCounts, backgroundColor: ['#0A84FF','#FF9F0A','#AF52DE','#34C759','#FF3B30','#8E8E93'] }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
-
-  // Meetings by month (last 6 months)
-  const months = [];
-  const meetingCounts = [];
-  const now = new Date();
-  for(let i = 5; i >= 0; i--){
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    const monthNames = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    months.push(monthNames[d.getMonth()] + ' ' + d.getFullYear());
-    meetingCounts.push(meetings.filter(m => m.date && m.date.startsWith(monthKey)).length);
-  }
-  const ctx3 = document.getElementById('chartMeetings');
-  if(ctx3){
-    chartMeetings = new Chart(ctx3.getContext('2d'), {
-      type: 'line',
-      data: { labels: months, datasets: [{ label: 'Reuniões', data: meetingCounts, borderColor: '#0A84FF', backgroundColor: 'rgba(10,132,255,0.1)', fill: true, tension: 0.3 }] },
-      options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
-    });
-  }
 }
 
 function openMeetingDetail(meetingId){
